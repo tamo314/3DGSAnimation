@@ -65,7 +65,14 @@ APIキー等の秘密情報は変数名・設定の有無のみを記録し、�
 
 ### KIRI Engine 3DGS Render アドオン
 
-- **未導入**。Blenderのユーザーアドオン・拡張機能（extensions）、有効アドオン一覧、`C:\Work` 配下のフォルダ名検索のいずれにも見当たらない。Blender 5.2LTSへの対応状況は未確認。
+- **未導入**（Blenderのユーザーアドオン・拡張機能、有効アドオン一覧、`C:\Work` 配下のフォルダ名検索のいずれにも見当たらない）。
+- 対応状況（GitHubのREADME・リリース・issueを確認、2026-10-20時点）:
+  - 最新は **v5.1.0**（2026-08-26頃）。「Blender 5.2対応」を明記し、Windowsのクリーンインストールで Blender 5.1.1 / 5.2.0 LTS の動作確認済み。**manifestの最低要件は Blender 5.1.0** なので、導入済みの5.2.1 LTSで使える見込み（5.2.1での実機確認は未実施）。
+  - 配布は Blender Extensions ではなく GitHub Releases のzip。解凍せず、Preferences → Get Extensions → Install from Disk で入れる。同梱wheelはPython 3.13（Blender 5.2のPythonと一致）。
+  - 入力は3DGSの **`.ply`**。**SPZの記載はない**。
+  - モードはEdit（メッシュ編集）とRender（ビューポート／オフライン描画、Blenderのメッシュと合成可）。ライティング（Sun/Spot/Area/Pointのリライティング、メッシュへの近似影、World/HDRIの拡散照明）は**すべて実験的**で、公式に「artistic approximation」とされる。
+  - 既知の問題: LichtFeld Studioで30000回学習したPLYのコントラストが過大になる未解決バグ（#66）。複製ごとにGPUメモリが増える。KIRI社は定期保守から撤退しコミュニティ主導（サポート保証なし）。
+  - ライセンスはGPL-2.0。
 
 ## 6. Tripo
 
@@ -81,13 +88,16 @@ APIキー等の秘密情報は変数名・設定の有無のみを記録し、�
 | サービス | 状況 |
 |---|---|
 | Tripo | 環境変数なし。ただしCLIのプロファイルにキーが保存済みで、`tripo doctor` で有効を確認 |
-| World Labs（`WLT_*` / `WORLDLABS*` / `MARBLE*` など） | **未設定**（ユーザー/マシン/プロセスの環境変数に該当なし） |
-| FAL（`FAL_KEY` など） | **未設定** |
+| World Labs（`WLT_*` / `WORLDLABS*` / `MARBLE*` など） | 環境変数は未設定。ただしユーザー指示により `apikey/worldlab.txt`（32バイト）にキーがある |
+| FAL（`FAL_KEY` など） | 環境変数は未設定。ただし `apikey/fal.txt`（72バイト）にキーがある |
+| `apikey/` の扱い | リポジトリ直下。`.gitignore` がないため、コミット事故を防ぐ目的でこのPCの `.git/info/exclude` に `apikey/` を追加済み（リポジトリには含まれない）。中身は読んでいない。ファイル作成時は必ず除外されていることを確認すること |
 | 参考 | 上記以外では `ELEVENLABS_API_KEY` が設定されている（このプロジェクトでは未使用） |
 
 ## 8. IMAGE-BLASTER
 
-- **未導入（見つからない）**。`C:\Work` 配下3階層、Claudeのスキル/プラグインディレクトリ、pipの一覧、グローバルnpmを探したが該当なし。名称違い・別場所に導入済みの可能性があるため、ユーザーに確認したい。
+- **未導入**。`C:\Work` 配下の検索でも見つからない。実体はGitHubリポジトリ `neilsonnn/image-blaster`（MIT）で、「単一画像から3D環境・SFX・メッシュを作るClaude Code用スキルセット」。cloneして `claude` を起動して使う。
+- 必要なもの: Claude Code、World LabsとFALのAPIキー（`.env.example` あり、キーは `apikey/` にある）、画像を `input/` に置く。環境はWorld Labs marble-1.1、3DモデルはFAL経由のhunyuan-3d。生成はクラウド側で行われローカルGPU要件の記載はないが、**有料API課金が発生する**（料金は未確認）。
+- 出力: 環境は **`.spz`**、モデルは `.glb` / `.obj`。KIRIアドオンは `.ply` のみなので、**SPZ→PLY変換が必要になる可能性が高い**（変換ツールは未確認。Phase 1/3の最初に要検証）。
 
 ## 9. ディスク
 
@@ -115,17 +125,17 @@ APIキー等の秘密情報は変数名・設定の有無のみを記録し、�
 | 高 | CUDA Toolkit 12.8（Windows、または WSL） | gsplatや3DGS学習CUDAカーネルのビルドに `nvcc` が必要。torchのcu128に合わせる | WSLのUbuntuに入れるのが楽（apt/NVIDIA公式のWSL用ネットワークインストーラ）。Windowsならインストーラ版12.8 |
 | 高 | MSVC Build Tools（C++デスクトップ開発） | WindowsでCUDA拡張をビルドする場合に必須 | Windowsで学習するなら導入。WSLで学習するなら不要 |
 | 高 | 3DGS学習環境の場所の決定 | Windows（MSVC+CUDA）かWSL（gcc+CUDA）かで準備が変わる | **推奨: WSL2 Ubuntuで学習・評価、Windows側でBlender/Unity**。WSL内では `uv` + Python 3.12系の仮想環境、torch cu128（Blackwell対応）を作る |
-| 高 | World Labs APIキー | 背景生成スレッドで使う。課金設定の確認も含めユーザー側で用意 | キーを環境変数（例: `WLT_API_KEY`）に設定（値はチャットに貼らない） |
-| 中 | FAL APIキー | 画像生成などで使う場合 | `FAL_KEY` を環境変数に設定 |
+| 高 | World Labs / FAL のAPIキーの渡し方 | キーは `apikey/*.txt` にある。IMAGE-BLASTERは `.env` で受け取る | 背景生成スレッドが `apikey/` から `.env`（gitignore対象）に転記して使う。値はログ・チャット・コミットに出さない |
+| 高 | IMAGE-BLASTERのclone | 背景生成（Phase 1）の本体 | `neilsonnn/image-blaster` を `C:\Work` 配下かリポジトリ外にclone（Bun/Node系のビューアあり） |
+| 高 | SPZ→PLY変換の手段 | blasterの出力はSPZ、KIRIはPLYのみ | 独自実装（SPZは公開仕様）か既存ツールを参考に変換スクリプトを書く |
 | 中 | cmake / COLMAP | 写真/多視点からのポーズ推定が必要になる場合 | `winget install Kitware.CMake`、COLMAPは公式バイナリ（CUDA版） |
 | 中 | Claude側のBlender MCP設定（このリポジトリ用） | 現状は別プロジェクトにのみ設定 | プロジェクトの `.mcp.json` に `uvx blender-mcp==1.9.1` を追加し、Blender側アドオンの版との接続テストを行う（必要ならアドオンを更新） |
-| 中 | KIRI Engine 3DGS Render アドオン | BlenderでのSplat表示・編集に使う想定 | Blender 5.2対応版の有無を確認の上、アドオンとして導入（拡張機能またはzip） |
-| 低 | IMAGE-BLASTER | 位置不明 | ユーザーに入手元・インストール先を確認 |
+| 中 | KIRI Engine 3DGS Render アドオン v5.1.0 | Phase 3でBlenderに3DGSを取り込む。5.2 LTS対応は確認済み | GitHub Releasesのzipを解凍せず Install from Disk で導入（導入は後続のBlender基盤スレッドで実施） |
 | 低 | Python 3.12系、`bpy`モジュール、trimesh/plyfile/open3d | 後続スクリプト用。システムPythonは3.10 | プロジェクト専用の `uv` 環境を作って入れる（システムPythonは触らない） |
 
 ## 12. 後続スレッドを始めるための条件
 
 - **Blender基盤スレッド**: すぐ開始可能（Blender 5.2.1 + MCPアドオンあり。MCPサーバー設定と接続確認を最初のタスクにする。Python（bpy）の再現可能スクリプトはBlenderヘッドレスで実行可）。
 - **Tripo生成スレッド**: すぐ開始可能（V3 CLIログイン済み、残165クレジット。生成は課金されるので実行前にクレジット消費の確認が必要）。
-- **背景生成スレッド**: World Labs APIキー、およびFAL等を使う場合はそのキーが必要。ローカルの3DGS学習をするなら、先にCUDA Toolkit + ビルド環境（上記の高優先）が必要。
+- **背景生成スレッド**: APIキーは `apikey/` にあり揃っている。IMAGE-BLASTERのclone・セットアップと、有料API課金の確認が先に必要。ローカルの3DGS学習をするなら、先にWSL2にCUDA Toolkit + ビルド環境（上記の高優先）が必要。
 - **Unity取り込み**: Unity 6000.6.0f1あり。`unity/` は空で、UnityGaussianSplatting（aras-p）の取り込みと6000.6での動作確認は未実施。
