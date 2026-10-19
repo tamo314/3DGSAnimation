@@ -1,0 +1,8 @@
+# 大きなバイナリ・生成物はGitに入れない
+*.ply
+*.spz
+*.splat
+*.blend1
+*.blend2
+__pycache__/
+experiments/**/out/
