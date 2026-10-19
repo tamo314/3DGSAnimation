@@ -19,3 +19,6 @@ __pycache__/
 *.pyc
 experiments/**/out/
 experiments/T4/
+
+experiments/T5/*
+!experiments/T5/final/

@@ -1,0 +1,48 @@
+{
+  "_comment": "T5b: 背景に焼き込まれた光に合わせたキャラ側ライティングの設定。測定の根拠は docs/06-lighting-visual-check.md。",
+  "sun": {
+    "azimuth_deg": 15.0,
+    "elevation_deg": 26.0,
+    "color_linear_rgb": [
+      0.98,
+      0.93,
+      0.72
+    ],
+    "angle_deg": 5.0,
+    "horizontal_irradiance": 0.71
+  },
+  "ambient": {
+    "horizontal_irradiance": 0.29,
+    "zenith_rgb": [
+      1.0,
+      0.97,
+      0.92
+    ],
+    "horizon_rgb": [
+      1.0,
+      0.93,
+      0.8
+    ],
+    "nadir_rgb": [
+      1.0,
+      0.8,
+      0.55
+    ]
+  },
+  "fill": {
+    "_comment": "キャラ正面側(カメラ側)への、日向の砂地からの照り返し。影を落とさない柔らかい平行光。",
+    "azimuth_deg": 195.0,
+    "elevation_deg": 15.0,
+    "color_linear_rgb": [
+      1.0,
+      0.82,
+      0.58
+    ],
+    "angle_deg": 45.0,
+    "front_vertical_irradiance": 0.15
+  },
+  "canopy_gobo": {
+    "floor": 0.2,
+    "distance_m": 1.5
+  }
+}
