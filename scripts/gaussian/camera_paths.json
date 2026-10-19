@@ -1,0 +1,72 @@
+{
+  "_comment": "5視点カメラの仮定義(T3)。背景生成スレッドが破綻検査(別視点から見て崩れないか)に使い、後で確定させる。座標はBlender世界座標(右手系・Z上・単位m)。",
+  "version": "0.1-draft",
+  "scene_assumption": {
+    "description": "木漏れ日の森の小道。小道中央にデフォルメキャラが立ち、後方に石造アーチがある。",
+    "up_axis": "Z",
+    "units": "meter",
+    "origin": "キャラクターの足元(小道中央)。地面は z=0。",
+    "character": { "position": [0.0, 0.0, 0.0], "facing": [0.0, -1.0, 0.0], "height_m": 1.0, "note": "デフォルメ頭身。メイン視点(front_wide)のカメラの方を向く" },
+    "path": { "direction": [0.0, 1.0, 0.0], "width_m": 2.0, "note": "小道はY方向(手前=-Y、奥=+Y)に延びる" },
+    "arch": { "position": [0.0, 8.0, 0.0], "width_m": 3.0, "height_m": 3.2, "note": "キャラの後方8mにある石造アーチ。アーチ越しに奥の森が見える" },
+    "background_extent_m": { "x": [-12.0, 12.0], "y": [-9.0, 14.0], "z": [0.0, 8.0], "note": "全カメラがこの範囲の背景ガウシアンを必ず映す想定" }
+  },
+  "render": { "width": 1440, "height": 1080, "aspect": "4:3", "sensor_width_mm": 36.0, "sensor_fit": "HORIZONTAL", "note": "参考画像(1448x1086)と同じ4:3。確定時に見直す" },
+  "cameras": [
+    {
+      "name": "front_wide",
+      "label": "正面ワイド",
+      "position": [0.0, -7.0, 1.6],
+      "target": [0.0, 4.0, 1.3],
+      "focal_length_mm": 24.0,
+      "roll_deg": 0.0,
+      "purpose": "メインの見せ場。手前の小道、キャラ、奥の石造アーチ、アーチ越しの森を一枚で見る。",
+      "check": "アーチの形が崩れていないか / 小道が奥へ自然に伸びているか / キャラ周辺に浮遊物(floaters)がないか"
+    },
+    {
+      "name": "character_medium",
+      "label": "キャラ中距離",
+      "position": [0.7, -3.0, 1.0],
+      "target": [0.0, 0.0, 0.55],
+      "focal_length_mm": 50.0,
+      "roll_deg": 0.0,
+      "purpose": "キャラの全身と周囲の地面・草。質感とライト・影の見え方を確認する。",
+      "check": "キャラ足元の地面の連続性 / 背景のボケや破綻 / 中景の木の幹の形"
+    },
+    {
+      "name": "dappled_low",
+      "label": "木漏れ日ローアングル",
+      "position": [-1.2, -2.2, 0.25],
+      "target": [0.2, 1.5, 1.7],
+      "focal_length_mm": 28.0,
+      "roll_deg": 0.0,
+      "purpose": "地面すれすれから見上げ、葉の隙間の光(木漏れ日)と樹冠を見る。ライティング用のレファレンス。",
+      "check": "樹冠の穴・空の抜け / 下からの見上げで地面が破綻しないか / 光の筋のサンプリング"
+    },
+    {
+      "name": "side_depth",
+      "label": "横方向の奥行き",
+      "position": [6.0, -0.5, 1.2],
+      "target": [0.0, 1.5, 1.0],
+      "focal_length_mm": 35.0,
+      "roll_deg": 0.0,
+      "purpose": "小道を横から見て奥行きと視差を確認する。正面からは見えない側面の破綻検出。",
+      "check": "アーチの側面・厚み / 小道脇の木々の裏側 / 視差で重なる層の分離"
+    },
+    {
+      "name": "high_oblique",
+      "label": "やや高い俯瞰",
+      "position": [2.5, -5.0, 4.2],
+      "target": [0.0, 1.0, 0.5],
+      "focal_length_mm": 35.0,
+      "roll_deg": 0.0,
+      "purpose": "少し高い位置からの斜め俯瞰。地面の広がりとキャラの位置関係、ゲーム視点の想定。",
+      "check": "地面の穴・反対側の抜け / キャラ周辺の地面が十分に生成されているか"
+    }
+  ],
+  "convention": {
+    "look_at": "カメラは position から target を向く。Blenderカメラは -Z 方向を向き +Y が上。roll_deg は視線軸まわりの回転(0で水平)。",
+    "blender_import": "scripts/blender/spike_common.py の load_camera_paths() でBlenderカメラ5台を作れる。",
+    "other_conventions": "OpenCV系(+Z前方, +Y下)へ変換する場合は look_at から導出すること。このJSONは位置・注視点・焦点距離だけを定義する。"
+  }
+}
