@@ -1,0 +1,41 @@
+{
+  "experiment": "char-t2-01",
+  "date": "2026-10-20",
+  "purpose": "少女ヒーラーの参照画像（前・左・背面）からTripoでキャラクターを生成する（T2 タスク1/最大3）",
+  "tool": "tripo-cli 0.3.1 / V3 API",
+  "task_id": "8445552f-584f-4de4-b258-eaaafe9480c2",
+  "task_type": "multiview_to_model",
+  "model": "v3.1-20260211",
+  "inputs": {
+    "front": "assets/reference/character/girl1.png",
+    "left": "assets/reference/character/girl2.png",
+    "back": "assets/reference/character/girl4.png",
+    "right": null,
+    "preprocess": "scripts/character/preprocess_refs.py (rembg birefnet-general で背景除去、全視点共通の縦範囲・縮尺不変で1397x1397に統一)"
+  },
+  "params": {
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "texture_alignment": "original_image",
+    "geometry_quality": "standard",
+    "export_uv": true
+  },
+  "credits": {
+    "balance_before": 165,
+    "consumed": 40,
+    "balance_after": 125,
+    "task_limit": "3回まで（本タスクで1回目）"
+  },
+  "output": "assets/generated/character/tripo_01/tripo-out/char-t2-01-8445552f/model.glb (約53MB, Git管理外)",
+  "result": "成功。杖・鞄・髪・顔・裏面とも大きな破綻なし。Blenderでの修正は不要で、向き・原点・スケールの正規化のみ実施。",
+  "normalized": {
+    "file": "assets/generated/character/normalized/girl_healer.glb (+ .blend, Git管理外)",
+    "height_m": 1.2,
+    "forward": "-Y (Blender標準)",
+    "origin": "足元中心, 足裏 Z=0",
+    "triangles": 1440990,
+    "textures": "4096x4096 Color / NormalGL / ORM (glTF PBR)"
+  },
+  "tasks_used": "1/3"
+}
