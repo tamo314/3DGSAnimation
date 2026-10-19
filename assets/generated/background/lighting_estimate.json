@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "primary_image": "assets/reference/background/forest1.png",
+  "method": "scripts/analysis/estimate_lighting.py（画像のみから推定。クラウド完結・課金APIなし）",
+  "coordinate_frame": "ワールド座標=統合シーンの契約(Z上・右手系・m)。+Y=小道中央のキャラ設置点から石造アーチへ向かう方向、+X=カメラ(-Y側)から見て右。方位は +Y から +X へ測る(上から見て時計回り)。仰角は水平面から。",
+  "sun": {
+    "azimuth_deg": 17.6,
+    "azimuth_deg_range": [
+      8.6,
+      26.6
+    ],
+    "azimuth_deg_montecarlo_p10_p90": [
+      14.2,
+      21.0
+    ],
+    "elevation_deg": 24.2,
+    "elevation_deg_range": [
+      17.2,
+      31.2
+    ],
+    "elevation_deg_montecarlo_p10_p90": [
+      20.8,
+      27.7
+    ],
+    "range_note": "range は目視の読み取り誤差・画角の仮定を含めた保守的な幅。montecarlo は仮定の範囲だけを振った幅（狭く出る）。",
+    "direction_to_sun_world": [
+      0.275,
+      0.87,
+      0.409
+    ],
+    "light_travel_direction_world": [
+      -0.275,
+      -0.87,
+      -0.409
+    ],
+    "blender_sun_rotation_euler_deg_XYZ": [
+      65.8,
+      0.0,
+      162.4
+    ],
+    "position_relative_to_view": "背後〜右上奥の逆光（半逆光）。カメラの正面(-Y側)を向く面は日陰になる。",
+    "color_temperature_K": 5050,
+    "color_temperature_K_range": [
+      4800,
+      5800
+    ],
+    "color_linear_rgb": [
+      1.0,
+      0.834,
+      0.621
+    ],
+    "color_srgb_hex": "#ffebce",
+    "angular_diameter_deg_recommended": 6.0,
+    "angular_diameter_deg_range": [
+      3.0,
+      15.0
+    ]
+  },
+  "ambient": {
+    "sun_to_ambient_irradiance_ratio_on_horizontal": 4.0,
+    "sun_to_ambient_ratio_range": [
+      3.0,
+      6.0
+    ],
+    "effective_shade_color": {
+      "color_linear_rgb": [
+        1.0,
+        0.922,
+        0.747
+      ],
+      "cct_K_as_rendered": 5500,
+      "note": "無彩色に近い石の日陰面が実際に示す色。日陰の見た目の根拠。青空よりずっと中立〜暖色（樹冠と地面の反射光が効く）。"
+    },
+    "world_upper_color_linear_rgb_initial": [
+      0.983,
+      1.0,
+      0.963
+    ],
+    "world_lower_color_linear_rgb_initial": [
+      1.0,
+      0.815,
+      0.568
+    ],
+    "upper_sky": {
+      "color_srgb_hex": "#aec6de",
+      "color_linear_rgb": [
+        0.579,
+        0.767,
+        1.0
+      ],
+      "cct_K_as_rendered": 9600
+    },
+    "lower_ground_bounce": {
+      "color_srgb_hex": "#eac99a",
+      "color_linear_rgb": [
+        1.0,
+        0.708,
+        0.389
+      ],
+      "relative_intensity_vs_upper": 0.5
+    },
+    "shade_on_neutral_stone": {
+      "color_srgb_hex": "#4a4740",
+      "cct_K_as_rendered": 5500
+    },
+    "blender_hint": "太陽の強さ S と World の背景の強さ A は S*sin(仰角)/(pi*A) = 比 を満たすように選ぶ（例: S=3.0 なら A≈0.10）。絶対値ではなく比が根拠。"
+  },
+  "shadow": {
+    "cast_direction_horizontal_world": [
+      -0.302,
+      -0.953
+    ],
+    "length_per_unit_height": 2.23,
+    "length_for_1p2m_character_m": 2.68,
+    "falls_toward": "カメラ側(-Y)かつ左(-X)。接地影はキャラの手前左へ伸びる。",
+    "path_shadow_edge_width_10_90_px": 10.0,
+    "path_shadow_edge_width_mm_approx": 68,
+    "softness_note": "縁(10-90%)は約7cm。遮蔽物の高さ0.2〜1mなら太陽の見かけの直径に換算して約4〜19度。AI生成画像の縁は物理的に正確でないため、太陽の直径は6度を初期値にして Phase 4-B で背景の影と見比べて調整する。"
+  },
+  "dappled_light": {
+    "sunlit_fraction_on_path": 0.2,
+    "length_weighted_median_sunlit_run_px": 29.0,
+    "length_weighted_median_sunlit_run_m_approx": 0.2,
+    "note": "小道の約2割が日向。日向の水平方向の連続長（長さ加重の中央値）が斑の幅の目安。キャラの木漏れ日ゴボは日向率20〜30%を目安に。"
+  },
+  "shafts_image": {
+    "slant_from_vertical_deg": -32,
+    "note": "右上→左下へ傾く光芒。光芒の収束点（=太陽の画像上の位置）は画面右上の外側。",
+    "sun_image_position_px_assumed": [
+      1370,
+      -50
+    ],
+    "per_image_structure_tensor": {
+      "forest1": {
+        "angle_from_vertical_deg": -29.3,
+        "coherence": 0.19
+      },
+      "forest2": {
+        "angle_from_vertical_deg": -43.6,
+        "coherence": 0.16
+      },
+      "forest3": {
+        "angle_from_vertical_deg": -5.9,
+        "coherence": 0.16
+      },
+      "forest4": {
+        "angle_from_vertical_deg": -28.3,
+        "coherence": 0.14
+      },
+      "forest5": {
+        "angle_from_vertical_deg": -36.4,
+        "coherence": 0.17
+      }
+    },
+    "per_image_caveat": "構造テンソルは葉の高周波が混ざり coherence が低く参考値。forest1 は目視の線引き(-32〜-35度)と一致。"
+  },
+  "geometry_assumptions": {
+    "horizontal_fov_deg": [
+      60,
+      80
+    ],
+    "camera_pitch_down_deg": [
+      0,
+      4
+    ],
+    "camera_axis_to_path_bearing_deg_p10_p90": [
+      11.4,
+      16.1
+    ],
+    "sun_azimuth_relative_to_camera_axis_deg_median": 31.2,
+    "camera_axis_to_path_bearing_deg_median": 13.6,
+    "sun_azimuth_relative_to_camera_axis_deg_p10_p90": [
+      26.9,
+      35.8
+    ],
+    "mm_per_px_on_path": 6.8
+  },
+  "uncertainty_summary": "方位 ±9度、仰角 ±7度程度（画角・俯角・光芒の収束点の仮定による）。色温度 ±500K（画像の色調補正と石の反射率を中立と仮定）。Phase 4-B で背景に焼き込まれた影の向きを測って補正すること。",
+  "recommended_for_phase_4b": {
+    "sun_euler_deg_XYZ": [
+      65.8,
+      0.0,
+      162.4
+    ],
+    "sun_color_linear_rgb": [
+      1.0,
+      0.834,
+      0.621
+    ],
+    "sun_angle_deg": 6.0,
+    "world_upper_color_linear_rgb": [
+      0.983,
+      1.0,
+      0.963
+    ],
+    "world_lower_color_linear_rgb": [
+      1.0,
+      0.815,
+      0.568
+    ],
+    "character_front_is_in_shade": true,
+    "expect": "キャラの正面(カメラ向き)は日陰になり、頭頂・肩・髪の右上縁にだけ直射と縁取り光が乗る。接地影は手前左へ約2倍の身長分伸びる。"
+  }
+}
