@@ -1,0 +1,31 @@
+{
+  "kind": "world_generation",
+  "provider": "world-labs",
+  "model": "marble-1.1",
+  "label": "標準 marble-1.1: forest1 + 自前プロンプト v1 (採用)",
+  "input_image": "assets/reference/background/forest1.png",
+  "text_prompt": "(experiments/prompts/forest1_clearing_v1.txt)",
+  "disable_recaption": true,
+  "seed": null,
+  "submitted_at": "2026-10-19T16:20:31.883411+00:00",
+  "credits_before": 6540.0,
+  "operation_id": "3c720b2c-ed76-4d12-923d-1947edfadec2",
+  "completed_at": "2026-10-19T16:25:45.494588+00:00",
+  "credits_after": 4960.0,
+  "credits_spent": 1580.0,
+  "cost": {
+    "total_credits": 1580,
+    "line_items": [
+      {
+        "name": "Pano generation (image, non-pano)",
+        "credits": 80
+      },
+      {
+        "name": "World generation",
+        "credits": 1500
+      }
+    ]
+  },
+  "world_id": "bdf8ae53-f55c-485b-b626-4fa04feef356",
+  "world_marble_url": "https://marble.worldlabs.ai/world/bdf8ae53-f55c-485b-b626-4fa04feef356"
+}

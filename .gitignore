@@ -1,8 +1,20 @@
-# 大きなバイナリ・生成物はGitに入れない
-*.ply
+# secrets
+apikey/
+.env
+
+# large binaries (kept out of Git; see docs)
 *.spz
+*.ply
 *.splat
+*.glb
+*.blend
 *.blend1
 *.blend2
+assets/reference/
+assets/generated/**/*.png
+assets/generated/**/*.jpg
+assets/generated/**/*.webp
+
 __pycache__/
+*.pyc
 experiments/**/out/

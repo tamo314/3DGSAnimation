@@ -1,0 +1,97 @@
+{
+ "world_name": "forest_clearing",
+ "description": "陽光が差し込むファンタジーの森の小さな広場(古木・石造アーチ・小道・滝と池・木漏れ日・青い小花)。forest1.png 1枚から World Labs で生成した、元カメラを中心に約360度つながる世界。",
+ "source": {
+  "image": "assets/reference/background/forest1.png",
+  "prompt_file": "experiments/prompts/forest1_clearing_v1.txt",
+  "prompt_options": {
+   "disable_recaption": true,
+   "is_pano": false
+  }
+ },
+ "generation": {
+  "provider": "World Labs Marble API",
+  "model": "marble-1.1",
+  "world_id": "bdf8ae53-f55c-485b-b626-4fa04feef356",
+  "world_marble_url": "https://marble.worldlabs.ai/world/bdf8ae53-f55c-485b-b626-4fa04feef356",
+  "experiment": "experiments/T1-g3-forest1-prompt-m11/meta.json",
+  "credits_spent": 1580,
+  "seed": null,
+  "generations_used_total": 3,
+  "generations_limit": 5
+ },
+ "files": {
+  "spz_full_res": {
+   "path": "forest_clearing_full_res.spz",
+   "splats": 1920000,
+   "bytes": 30348365,
+   "spz_version": 2,
+   "sh_degree": 0
+  },
+  "spz_500k": {
+   "path": "forest_clearing_500k.spz",
+   "splats": 500000,
+   "bytes": 7893447,
+   "note": "full_res と見た目はほぼ同じ。Unity/KIRIの標準はこちらを推奨"
+  },
+  "spz_100k": {
+   "path": "forest_clearing_100k.spz",
+   "splats": 98304,
+   "bytes": 1418727
+  },
+  "ply_full_res": {
+   "path": "forest_clearing_full_res.ply",
+   "bytes": 107520363,
+   "note": "World Labs の export API(無料)で取得。SPZ座標(RDF)のまま。KIRIは座標変換しない"
+  },
+  "ply_500k": {
+   "path": "forest_clearing_500k.ply",
+   "bytes": 28000362
+  },
+  "collider_glb": "forest_clearing_collider.glb",
+  "pano": "forest_clearing_pano.png",
+  "thumbnail": "forest_clearing_thumbnail.webp",
+  "checks": "checks/ (5視点の撮影結果、コンタクトシート)"
+ },
+ "git_note": "SPZ/PLY/GLB/画像は大きいためGit管理外(assets/generated/background/ はメインのフォルダ側にのみ存在)。このJSONと experiments/ だけコミットしてある。",
+ "coordinates": {
+  "spz_native": "RDF(X右・Y下・Z前方)。元カメラが原点で +Z を向く。",
+  "viewer_transform": "X軸まわり180度回転 → ×metric_scale_factor → Y方向に ground_plane_offset 移動(メートル、地面 y=0、元カメラ高さ=ground_plane_offset)",
+  "metric_scale_factor": 1.6804388,
+  "ground_plane_offset": 0.9747118,
+  "eye_height_m": 0.975,
+  "blender_convention": "X右・Y前方・Z上。Blender = (x, -z - char_y, y) (ビューア座標から)。キャラ足元を原点にすると元カメラは (0, -3.5, 0.975)",
+  "note": "メートル換算はWorld Labs推定。元カメラの視点高が約1.0mとなり、アーチは約23m先・高さ約10mと推定される(ファンタジーの巨大な世界)。"
+ },
+ "landmarks_measured": {
+  "note": "元カメラ(0,0,0.975)から前方を向いた時のレイ推定。値は概算(m)。",
+  "ground_near_dist_m": 2.3,
+  "ground_mid_dist_m": 4.4,
+  "arch_dist_m": 23.5,
+  "arch_width_m_approx": 5,
+  "arch_height_m_approx": 10,
+  "big_tree_left_dist_m": 12.0,
+  "tree_right_dist_m": 9.5
+ },
+ "character_spot": {
+  "status": "暫定(Blenderでの確認待ち)",
+  "blender_origin_meaning": "小道の上、元カメラの前方3.5m(ビューア座標 x=0,z=-3.5)、キャラは元カメラの方(-Y)を向く",
+  "free_space": "元カメラを中心に、半径3〜4m程度は視点を動かしても破綻しない。その外側(木・岩壁の内側、元カメラの7m以上後方や6m以上の横方向)は視点が幾何の内側に入る。"
+ },
+ "camera_paths": {
+  "file": "scripts/background/camera_paths_background.json",
+  "t3_draft_result": "T3の仮定義の視点は視点が木の内側や未観測領域に入り撮れない。docs/10-background-results.md 参照。"
+ },
+ "quality": {
+  "strengths": [
+   "正面〜斜め前方(元カメラ周囲±3m)ではアーチ・古木・滝・小道・木漏れ日・花が高精細に残る",
+   "広場の足元は平坦で、陽だまりの質感がある"
+  ],
+  "weaknesses": [
+   "視点が木・岩に近づくと内側に入る(コライダー無しでは通り抜ける)",
+   "元カメラから7m以上後退・6m以上横移動すると破綻",
+   "池の水面は真上近くからだと透過・ぼけ",
+   "SHなし(SH0)なので視線による色変化はない"
+  ]
+ }
+}

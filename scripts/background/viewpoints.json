@@ -1,0 +1,75 @@
+{
+ "_comment": "pos/target は [x, 地面からの高さ, z] (ビューア座標: Y上、前方=-Z、元画像のカメラが [0, 視点高, 0])。T3の scripts/gaussian/camera_paths.json が出来るまでの暫定5視点。",
+ "viewpoints": [
+  {
+   "name": "1_front_wide",
+   "pos": [
+    0,
+    1.0,
+    0
+   ],
+   "target": [
+    0,
+    1.0,
+    -1
+   ],
+   "fov": 60
+  },
+  {
+   "name": "2_char_mid",
+   "pos": [
+    1.2,
+    0.9,
+    -1.0
+   ],
+   "target": [
+    0,
+    0.9,
+    -4.0
+   ],
+   "fov": 40
+  },
+  {
+   "name": "3_dapple_low",
+   "pos": [
+    0.5,
+    0.3,
+    -1.5
+   ],
+   "target": [
+    4.0,
+    4.5,
+    -8.0
+   ],
+   "fov": 55
+  },
+  {
+   "name": "4_side_depth",
+   "pos": [
+    -2.0,
+    1.2,
+    0.5
+   ],
+   "target": [
+    1.5,
+    1.0,
+    -5.0
+   ],
+   "fov": 55
+  },
+  {
+   "name": "5_high_overview",
+   "pos": [
+    0,
+    4.0,
+    1.0
+   ],
+   "target": [
+    0,
+    0.0,
+    -6.0
+   ],
+   "fov": 55
+  }
+ ]
+}

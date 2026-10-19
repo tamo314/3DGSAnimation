@@ -1,0 +1,105 @@
+{
+ "_comment": "背景(forest1由来のWorld Labs世界)で破綻なく見られることを確認した5視点。T3の仮定義(scripts/gaussian/camera_paths.json)はこの世界では視点が木や岩の内側に入るため、世界の自由空間に合わせて詰め直した。座標はBlender世界座標(X右・Y前方・Z上、m)。",
+ "version": "0.2-background-fit",
+ "alignment": {
+  "character_foot": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "source_camera": [
+   0.0,
+   -3.5,
+   "視点高(world_meta.json の eye_height_m)"
+  ],
+  "character_facing": [
+   0.0,
+   -1.0,
+   0.0
+  ]
+ },
+ "cameras": [
+  {
+   "name": "front_wide",
+   "position": [
+    0,
+    -3.5,
+    1.0
+   ],
+   "target": [
+    0,
+    -2.5,
+    1.0
+   ],
+   "focal_length_mm": 23.4,
+   "roll_deg": 0.0
+  },
+  {
+   "name": "character_medium",
+   "position": [
+    1.2,
+    -2.5,
+    0.9
+   ],
+   "target": [
+    0,
+    0.5,
+    0.9
+   ],
+   "focal_length_mm": 37.1,
+   "roll_deg": 0.0
+  },
+  {
+   "name": "dappled_low",
+   "position": [
+    0.5,
+    -2.0,
+    0.3
+   ],
+   "target": [
+    4.0,
+    4.5,
+    4.5
+   ],
+   "focal_length_mm": 25.9,
+   "roll_deg": 0.0
+  },
+  {
+   "name": "side_depth",
+   "position": [
+    -2.0,
+    -4.0,
+    1.2
+   ],
+   "target": [
+    1.5,
+    1.5,
+    1.0
+   ],
+   "focal_length_mm": 25.9,
+   "roll_deg": 0.0
+  },
+  {
+   "name": "high_oblique",
+   "position": [
+    0,
+    -4.5,
+    4.0
+   ],
+   "target": [
+    0,
+    2.5,
+    0.0
+   ],
+   "focal_length_mm": 25.9,
+   "roll_deg": 0.0
+  }
+ ],
+ "render": {
+  "width": 1440,
+  "height": 1080,
+  "aspect": "4:3",
+  "sensor_width_mm": 36.0,
+  "sensor_fit": "HORIZONTAL"
+ }
+}

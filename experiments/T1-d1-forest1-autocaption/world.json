@@ -1,0 +1,36 @@
+{
+  "world_id": "0b657ecb-a36f-41d0-aa4d-c80fd7d324dd",
+  "display_name": "",
+  "tags": null,
+  "assets": {
+    "mesh": {
+      "collider_mesh_url": "https://cdn.marble.worldlabs.ai/0b657ecb-a36f-41d0-aa4d-c80fd7d324dd/128a33f5.glb",
+      "hq_mesh_url": null,
+      "full_res_mesh_url": null
+    },
+    "imagery": {
+      "pano_url": null
+    },
+    "splats": {
+      "spz_urls": {
+        "500k": "https://cdn.marble.worldlabs.ai/0b657ecb-a36f-41d0-aa4d-c80fd7d324dd/a76369dc-e158-4150-8615-9a1ee4430ab5_sand_500k.spz",
+        "100k": "https://cdn.marble.worldlabs.ai/0b657ecb-a36f-41d0-aa4d-c80fd7d324dd/5794cf51-7b45-4f71-a648-06ea55d88fd1_sand_100k.spz",
+        "full_res": "https://cdn.marble.worldlabs.ai/0b657ecb-a36f-41d0-aa4d-c80fd7d324dd/42b2a37e-3992-4889-b0a8-98c9e1d0411c_sand.spz"
+      },
+      "semantics_metadata": null
+    },
+    "thumbnail_url": "https://cdn.marble.worldlabs.ai/0b657ecb-a36f-41d0-aa4d-c80fd7d324dd/4977c0b2-d704-4b0a-8670-887e9d256d96_sand_mpi/thumbnail.webp",
+    "caption": "The scene is a richly detailed fantasy landscape rendered in a cinematic, highly realistic style, with a tranquil and reverent tone that turns the entire place into a forgotten sanctuary. Its atmosphere feels timeless and restorative, where stone, water, and vegetation have settled into a quiet harmony. A winding earthen path loops through the center of the ruins and branches into narrower trails that weave between toppled columns, fern beds, and low walls softened by moss. Around the central clearing, fractured archways of pale gray stone rise from the ground in irregular intervals, their pointed openings threaded with ivy and their carved edges worn into rounded contours by age. Several terraces step gently down toward a chain of clear pools, where water moves from one basin to the next over short rock ledges and gathers beside clusters of reeds and flat stepping stones. Massive trees encircle the ruin complex, their roots gripping broken foundations, splitting paving slabs, and curling over stair edges like thick ropes anchored into the earth. Wildflowers in blue, white, and faint violet spread through the undergrowth and collect along the margins of the paths, filling cracks in the masonry and surrounding fallen capitals with dense, delicate color. On one side of the sanctuary, a roofless colonnade stretches beside a retaining wall, and its surviving pillars support fragments of lintel stone draped in vines and small hanging plants. Opposite that structure, the land rises into a rocky slope scattered with boulders, young saplings, and remnants of carved markers that suggest former garden boundaries or processional routes. Farther outward, additional ruins continue in a loose ring, including collapsed chambers, half-buried stairways, and circular plinths that once held statues, all partially concealed beneath grasses and creeping groundcover. Through openings between trunks and arches, distant cliffs and high spired structures crown the horizon, linking the secluded grove to a larger ancient realm beyond the forest. The 360 scene is faultless."
+  },
+  "created_at": null,
+  "updated_at": null,
+  "permission": {
+    "public": false,
+    "allowed_readers": [],
+    "allowed_writers": [],
+    "allow_id_access": false
+  },
+  "world_prompt": null,
+  "world_marble_url": "https://marble.worldlabs.ai/world/0b657ecb-a36f-41d0-aa4d-c80fd7d324dd",
+  "model": null
+}

@@ -1,0 +1,40 @@
+{
+  "world_id": "bdf8ae53-f55c-485b-b626-4fa04feef356",
+  "display_name": "",
+  "tags": null,
+  "assets": {
+    "mesh": {
+      "collider_mesh_url": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/f9eaeddb.glb",
+      "hq_mesh_url": null,
+      "full_res_mesh_url": null
+    },
+    "imagery": {
+      "pano_url": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/b6db8579-3e79-4db2-a64f-a4ef2f46caf1_panos/rgb_0.png"
+    },
+    "splats": {
+      "spz_urls": {
+        "500k": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/c0b38268-b1f5-491a-a80b-f79fddec0f7f_ceramic_500k.spz",
+        "100k": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/eefb5003-f6b5-49ce-841f-95a4f92b184f_dust_100k.spz",
+        "150k": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/46aa1344-7800-426f-8c33-d87fe1675b87_ceramic_150k.spz",
+        "full_res": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/dfd3dc4b-c81a-481b-b8f0-173e5681b61a_ceramic.spz"
+      },
+      "semantics_metadata": {
+        "metric_scale_factor": 1.6804388,
+        "ground_plane_offset": 0.9747118
+      }
+    },
+    "thumbnail_url": "https://cdn.marble.worldlabs.ai/bdf8ae53-f55c-485b-b626-4fa04feef356/8ec599cb-6043-409a-9451-273f1c25c81e_sand_mpi/thumbnail.webp",
+    "caption": "A small sunlit clearing in a fantasy forest, seen from a low standing eye height. In the left of the scene a huge ancient oak with a thick moss-covered trunk and gnarled exposed roots; a gentle waterfall drops over mossy rocks into a clear turquoise pool at its base. In the middle distance a weathered stone archway with a pointed opening, wrapped in ivy and carved with fine runes, flanked by broken carved stone pillars. A worn dirt path with a few flat stone steps leads from the open foreground up toward the arch. Soft golden sunbeams fall through the leaf canopy from the upper right, dappling the path and ferns with light and shadow and making faint light shafts in the hazy air. Small glowing blue and white star-shaped flowers, ferns and thick moss cover the ground edges and roots. Beyond the arch, misty tall trees and distant cliffs fade into blue haze. Painterly high-detail fantasy art with rich fine textures: bark, moss, weathered stone, damp soil, leaves. The ground in the foreground is a clear, open, flat area. The surroundings continue naturally as dense forest on all sides. No people, no animals, no characters, no text."
+  },
+  "created_at": null,
+  "updated_at": null,
+  "permission": {
+    "public": false,
+    "allowed_readers": [],
+    "allowed_writers": [],
+    "allow_id_access": false
+  },
+  "world_prompt": null,
+  "world_marble_url": "https://marble.worldlabs.ai/world/bdf8ae53-f55c-485b-b626-4fa04feef356",
+  "model": null
+}
