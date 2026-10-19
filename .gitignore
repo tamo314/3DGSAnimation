@@ -1,0 +1,16 @@
+# secrets
+apikey/
+.env
+
+# large binaries (kept out of Git; see docs)
+*.spz
+*.ply
+*.splat
+*.glb
+assets/reference/
+assets/generated/**/*.png
+assets/generated/**/*.jpg
+assets/generated/**/*.webp
+
+__pycache__/
+*.pyc

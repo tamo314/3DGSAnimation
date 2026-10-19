@@ -1,0 +1,36 @@
+{
+  "world_id": "8f02141c-517c-4617-80ce-756cbd609511",
+  "display_name": "",
+  "tags": null,
+  "assets": {
+    "mesh": {
+      "collider_mesh_url": "https://cdn.marble.worldlabs.ai/8f02141c-517c-4617-80ce-756cbd609511/562d5f01.glb",
+      "hq_mesh_url": null,
+      "full_res_mesh_url": null
+    },
+    "imagery": {
+      "pano_url": null
+    },
+    "splats": {
+      "spz_urls": {
+        "500k": "https://cdn.marble.worldlabs.ai/8f02141c-517c-4617-80ce-756cbd609511/15ce0593-5ea3-4f46-bd9b-dc296c872bf2_sand_500k.spz",
+        "100k": "https://cdn.marble.worldlabs.ai/8f02141c-517c-4617-80ce-756cbd609511/3f23d279-c06a-46d5-bec7-1ab892052d27_sand_100k.spz",
+        "full_res": "https://cdn.marble.worldlabs.ai/8f02141c-517c-4617-80ce-756cbd609511/fa6bbe10-4f14-4cd3-8339-d41314cfa3ce_sand.spz"
+      },
+      "semantics_metadata": null
+    },
+    "thumbnail_url": "https://cdn.marble.worldlabs.ai/8f02141c-517c-4617-80ce-756cbd609511/24c85c5b-a972-45e7-9147-5dda3c6379c0_sand_mpi/thumbnail.webp",
+    "caption": "A small sunlit clearing in a fantasy forest, seen from a low standing eye height. In the left of the scene a huge ancient oak with a thick moss-covered trunk and gnarled exposed roots; a gentle waterfall drops over mossy rocks into a clear turquoise pool at its base. In the middle distance a weathered stone archway with a pointed opening, wrapped in ivy and carved with fine runes, flanked by broken carved stone pillars. A worn dirt path with a few flat stone steps leads from the open foreground up toward the arch. Soft golden sunbeams fall through the leaf canopy from the upper right, dappling the path and ferns with light and shadow and making faint light shafts in the hazy air. Small glowing blue and white star-shaped flowers, ferns and thick moss cover the ground edges and roots. Beyond the arch, misty tall trees and distant cliffs fade into blue haze. Painterly high-detail fantasy art with rich fine textures: bark, moss, weathered stone, damp soil, leaves. The ground in the foreground is a clear, open, flat area. The surroundings continue naturally as dense forest on all sides. No people, no animals, no characters, no text."
+  },
+  "created_at": null,
+  "updated_at": null,
+  "permission": {
+    "public": false,
+    "allowed_readers": [],
+    "allowed_writers": [],
+    "allow_id_access": false
+  },
+  "world_prompt": null,
+  "world_marble_url": "https://marble.worldlabs.ai/world/8f02141c-517c-4617-80ce-756cbd609511",
+  "model": null
+}

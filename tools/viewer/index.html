@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3DGS Background Check</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #ddd; font: 12px/1.4 system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  #hud { position: fixed; left: 8px; top: 8px; background: #000a; padding: 6px 8px; border-radius: 4px; white-space: pre; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+  "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.0.0/dist/spark.module.js"
+} }
+</script>
+</head>
+<body>
+<div id="hud">loading...</div>
+<script type="module">
+// 独自実装の確認用ビューア。URLパラメータ:
+//   spz=<url>  scale=<metric_scale_factor>  offset=<ground_plane_offset>  flip=1|0  fov=<deg>  w,h=<canvas size>
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
+
+const q = new URLSearchParams(location.search);
+const W = +(q.get("w") || innerWidth), H = +(q.get("h") || innerHeight);
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(W, H);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x202020);
+const camera = new THREE.PerspectiveCamera(+(q.get("fov") || 60), W / H, 0.01, 1000);
+const spark = new SparkRenderer({ renderer });
+scene.add(spark);
+
+const holder = new THREE.Group();   // World Labs の SPZ は Y下向き: X軸まわり180度で反転 → メートル換算 → 地面合わせ
+holder.rotation.x = q.get("flip") === "0" ? 0 : Math.PI;
+holder.scale.setScalar(+(q.get("scale") || 1));
+holder.position.y = +(q.get("offset") || 0);
+scene.add(holder);
+
+const mesh = new SplatMesh({ url: new URL(q.get("spz"), location.href).href });
+holder.add(mesh);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = false;
+camera.position.set(0, 0, 0.001);
+controls.target.set(0, 0, -1);
+controls.update();
+
+const hud = document.getElementById("hud");
+if (q.get("hud") === "0") hud.style.display = "none";
+function updateHud(msg = "") {
+  const p = camera.position, t = controls.target;
+  hud.textContent = `${msg}\npos ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)}\ntgt ${t.x.toFixed(2)} ${t.y.toFixed(2)} ${t.z.toFixed(2)}`;
+}
+renderer.setAnimationLoop(() => { renderer.render(scene, camera); });
+controls.addEventListener("change", () => updateHud());
+
+window.viewer = {
+  ready: mesh.initialized.then(() => { updateHud("loaded: " + mesh.numSplats + " splats"); return mesh.numSplats; }),
+  setPose({ pos, target, fov }) {
+    camera.position.set(...pos);
+    controls.target.set(...target);
+    if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    controls.update(); updateHud();
+  },
+  // 地面推定用: 原点前方(x±1.5, 前方1〜6)の元座標(Y下)でのYのパーセンタイル
+  groundProbe() {
+    const ys = [];
+    mesh.forEachSplat((i, c) => { if (Math.abs(c.x) < 1.5 && c.z > 1 && c.z < 6) ys.push(c.y); });
+    ys.sort((a, b) => a - b);
+    const pc = (t) => ys[Math.min(ys.length - 1, Math.floor(ys.length * t))];
+    return { n: ys.length, p50: pc(.5), p80: pc(.8), p90: pc(.9), p95: pc(.95), p99: pc(.99) };
+  },
+  // 画面上の点(u,v ∈[0,1])から出したレイ上の、最も手前の不透明面までの距離(ワールド単位=メートル)を推定する
+  rayProbe(pos, u, v, fovDeg, aspect, cone = 0.012, minOpacity = 0.35) {
+    const t = Math.tan(THREE.MathUtils.degToRad(fovDeg) / 2);
+    const dir = new THREE.Vector3((u * 2 - 1) * t * aspect, (1 - v * 2) * t, -1).normalize();
+    const o = new THREE.Vector3(...pos);
+    mesh.updateMatrixWorld(true);
+    const m = mesh.matrixWorld, p = new THREE.Vector3(), d = [];
+    mesh.forEachSplat((i, c, sc, q, op) => {
+      if (op < minOpacity) return;
+      p.copy(c).applyMatrix4(m).sub(o);
+      const along = p.dot(dir);
+      if (along < 0.3) return;
+      const perp = p.addScaledVector(dir, -along).length();
+      if (perp < cone * along) d.push(along);
+    });
+    d.sort((a, b) => a - b);
+    const pc = (x) => d.length ? +d[Math.min(d.length - 1, Math.floor(d.length * x))].toFixed(2) : null;
+    return { n: d.length, p05: pc(.05), p20: pc(.2), p50: pc(.5), dir: dir.toArray().map(x => +x.toFixed(3)) };
+  },
+  bbox() { const b = mesh.getBoundingBox(); return { min: b.min.toArray(), max: b.max.toArray() }; },
+  // 描画が落ち着くまで数フレーム待ってからPNGを保存サーバへ送る
+  async snap(name) {
+    for (let i = 0; i < 12; i++) await new Promise(r => requestAnimationFrame(r));
+    const blob = await new Promise(r => renderer.domElement.toBlob(r, "image/png"));
+    const res = await fetch("/save?name=" + encodeURIComponent(name), { method: "POST", body: blob });
+    return res.text();
+  },
+};
+</script>
+</body>
+</html>
