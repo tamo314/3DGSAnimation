@@ -2,7 +2,7 @@
 
 MCPサーバー(uvx blender-mcp)を経由せず、アドオンのTCPソケットへJSONコマンドを送る。
 接続確認や、Claudeセッションにblenderツールが出ていない時の代替に使う。
-ポートは環境変数 BLENDER_PORT(既定9877)。9876は別プロジェクトが使うので触らない。
+ポートは環境変数 BLENDER_PORT(既定9880)。9876は別プロジェクトが使うので触らない。
 
   python scripts/blender/mcp_client.py handshake
   python scripts/blender/mcp_client.py exec "print(bpy.app.version_string)"
@@ -14,7 +14,7 @@ import socket
 import sys
 
 HOST = os.environ.get("BLENDER_HOST", "127.0.0.1")
-PORT = int(os.environ.get("BLENDER_PORT", "9877"))
+PORT = int(os.environ.get("BLENDER_PORT", "9880"))
 
 
 def send(cmd_type, params=None, timeout=300.0):

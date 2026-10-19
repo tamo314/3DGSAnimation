@@ -18,3 +18,4 @@ assets/generated/**/*.webp
 __pycache__/
 *.pyc
 experiments/**/out/
+experiments/T4/
