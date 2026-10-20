@@ -26,3 +26,4 @@ experiments/T5/*
 experiments/T7/data/
 experiments/T7/runs/
 experiments/T7/*.ply
+experiments/T8/
