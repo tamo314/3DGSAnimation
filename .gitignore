@@ -22,3 +22,7 @@ experiments/T4/
 
 experiments/T5/*
 !experiments/T5/final/
+
+experiments/T7/data/
+experiments/T7/runs/
+experiments/T7/*.ply
