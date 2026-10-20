@@ -25,9 +25,15 @@ ap.add_argument("--split", default="train", choices=["train", "all"])
 ap.add_argument("--max-views", type=int, default=0)
 a = ap.parse_args()
 
-meta = json.load(open(os.path.join(a.master, "views.json")))
+# --master は複数指定可(カンマ区切り)。種類名(type)が重ならないものを結合する。points3D.plyは先頭のものを使う
+masters = a.master.split(",")
+metas = [json.load(open(os.path.join(m, "views.json"))) for m in masters]
+meta = metas[0]
 types = a.types.split(",")
-views = [v for v in meta["views"] if v["type"] in types and (a.split == "all" or v["split"] == "train")]
+views = []
+for m, mt in zip(masters, metas):
+    assert mt["size"] == meta["size"] and abs(mt["fx"] - meta["fx"]) < 1e-6
+    views += [dict(v, master=m) for v in mt["views"] if v["type"] in types and (a.split == "all" or v["split"] == "train")]
 if a.max_views:
     views = views[: a.max_views]
 S0 = meta["size"]
@@ -50,7 +56,7 @@ def premult(path, size):
 
 for v in views:
     for z in sizes:
-        Image.fromarray(premult(os.path.join(a.master, "images", v["name"]), z)).save(os.path.join(a.out, "images", v["name"][:-4] + sfx(z) + ".png"))
+        Image.fromarray(premult(os.path.join(v["master"], "images", v["name"]), z)).save(os.path.join(a.out, "images", v["name"][:-4] + sfx(z) + ".png"))
 
 
 def rotmat_to_quat(m):
@@ -87,7 +93,7 @@ with open(os.path.join(sp, "images.txt"), "w") as f:
         q = rotmat_to_quat(R)
         f.write(f"{iid} {q[0]:.9f} {q[1]:.9f} {q[2]:.9f} {q[3]:.9f} {t[0]:.9f} {t[1]:.9f} {t[2]:.9f} {ci + 1} {v['name'][:-4] + sfx(z)}.png\n\n")
 # points3D: マスターのply(表面サンプル)をtxtにもコピー
-raw = open(os.path.join(a.master, "points3D.ply"), "rb").read()
+raw = open(os.path.join(masters[0], "points3D.ply"), "rb").read()
 hdr_end = raw.index(b"end_header\n") + len(b"end_header\n")
 n = int(raw[:hdr_end].split(b"element vertex ")[1].split()[0])
 rec = np.frombuffer(raw[hdr_end:], dtype=[("p", "<f4", 3), ("n", "<f4", 3), ("c", "u1", 3)], count=n)
@@ -95,7 +101,7 @@ with open(os.path.join(sp, "points3D.txt"), "w") as f:
     f.write("# 3D point list\n")
     for i, p in enumerate(rec["p"]):
         f.write(f"{i + 1} {p[0]:.6f} {p[1]:.6f} {p[2]:.6f} 128 128 128 0.5\n")
-shutil.copy(os.path.join(a.master, "points3D.ply"), os.path.join(a.out, "sparse", "0", "points3D.ply"))
+shutil.copy(os.path.join(masters[0], "points3D.ply"), os.path.join(a.out, "sparse", "0", "points3D.ply"))
 import subprocess
 subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "write_colmap_bin.py"), sp], check=True)
 json.dump({"types": types, "sizes": sizes, "n_views": len(views)}, open(os.path.join(a.out, "dataset_info.json"), "w"))

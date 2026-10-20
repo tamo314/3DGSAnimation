@@ -31,7 +31,11 @@ ap.add_argument("--lens", type=float, default=50.0)
 ap.add_argument("--limit", type=int, default=0, help="先頭からこの枚数だけ描く(0=全部)")
 ap.add_argument("--glb", default=None)
 ap.add_argument("--types-json", default=None, help='種類定義を上書き: [["name", n, r, z, el_min, el_max], ...]')
+ap.add_argument("--preset", default=None, choices=["zoom", "lower", "close"], help="評価・追加学習用の視点セット(PowerShellのJSON引用符問題を避ける)")
+ap.add_argument("--only-test", action="store_true", help="split==testの視点だけ描く(高解像度の正解を一部だけ作る用)")
+ap.add_argument("--only-types", default=None, help="この種類(カンマ区切り)だけ描く")
 ap.add_argument("--all-test", action="store_true", help="全視点をtestにする(学習に使わない拡大評価用)")
+ap.add_argument("--basecolor", default=None, help="ベースカラーのテクスチャ画像を差し替える(超解像テクスチャの検証用)")
 ap.add_argument("--points", type=int, default=150000)
 a = ap.parse_args(argv)
 
@@ -43,6 +47,14 @@ TYPES = [
     ("lower", dict(n=48, r=1.0, z=0.30, el=(-10, 55))),
 ]
 
+PRESETS = {
+    "zoom": [["zoomface", 12, 0.35, 1.0, -10, 40], ["zoomupper", 12, 0.6, 0.85, -5, 40]],
+    "lower": [["lower", 8, 1.0, 0.30, -8, 52]],
+    "close": [["close", 40, 0.40, 1.0, -15, 45]],
+}
+if a.preset:
+    a.types_json = json.dumps(PRESETS[a.preset])
+    a.all_test = a.preset in ("zoom", "lower")
 if a.types_json:
     TYPES = [(n, dict(n=c, r=r, z=z, el=(e0, e1))) for n, c, r, z, e0, e1 in json.loads(a.types_json)]
 
@@ -70,6 +82,21 @@ glb = a.glb or r"C:/Work/3DGSAnimation/assets/generated/character/normalized/gir
 before = set(bpy.data.objects)
 bpy.ops.import_scene.gltf(filepath=glb)
 new = [o for o in bpy.data.objects if o not in before]
+if a.basecolor:
+    img_new = bpy.data.images.load(os.path.abspath(a.basecolor))
+    img_new.colorspace_settings.name = "sRGB"
+    n_rep = 0
+    for mat in bpy.data.materials:
+        if not mat.use_nodes:
+            continue
+        for node in mat.node_tree.nodes:
+            if node.type == "BSDF_PRINCIPLED":
+                lnk = node.inputs["Base Color"].links
+                if lnk and lnk[0].from_node.type == "TEX_IMAGE":
+                    print("T8 basecolor texture replaced:", lnk[0].from_node.image.name, lnk[0].from_node.image.size[:], "->", img_new.size[:])
+                    lnk[0].from_node.image = img_new
+                    n_rep += 1
+    assert n_rep > 0, "ベースカラーのテクスチャノードが見つからない"
 lighting.setup(lighting.load_config())
 
 dg = bpy.context.evaluated_depsgraph_get()
@@ -135,7 +162,9 @@ for k, (tname, p, az, el) in enumerate(order):
     bpy.context.view_layer.update()
     name = f"{k:04d}_{tname}.png"
     path = os.path.join(out, "images", name)
-    if not os.path.exists(path) and (a.limit == 0 or k < a.limit):
+    is_test = a.all_test or k % 8 == 0
+    skip = (a.only_test and not is_test) or (a.only_types and tname not in a.only_types.split(","))
+    if not skip and not os.path.exists(path) and (a.limit == 0 or k < a.limit):
         scene.render.filepath = path
         bpy.ops.render.render(write_still=True)
         if k % 8 == 0:
