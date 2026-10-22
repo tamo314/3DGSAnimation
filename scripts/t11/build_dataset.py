@@ -1,6 +1,7 @@
 """T11: 切り抜き済みRGBA画像 + 名目の方位角 から、3DGS学習用のNeRF-synthetic形式データを作る。
   python -I build_dataset.py VIEWS_JSON OUT_DIR [--hold name1,name2] [--W 1024 --H 1280]
 VIEWS_JSON: [{"file": "path.png", "az": 方位角deg(0=正面, +=カメラがキャラの左へ回る), "el": 仰角deg}, ...]
+"zoom"(と注視点のz "tz")を持つ項目は顔アップ等で、正規化せずに使う(fxはzoom倍)。
 各画像を「頭頂〜足裏の高さ・足元の左右中心」で正規化して同じ位置・大きさに揃える
 (生成画像はカメラ距離・位置が視点ごとにばらつくため。キャラの高さ=ワールドの2.0、足裏z=-1)。
 カメラは中心(0,0,0)を向く弱透視(距離8)。仰角が0でない画像は高さの正規化が正確でない(足元基準)。"""
@@ -17,14 +18,20 @@ fovx = 2 * math.atan(W / 2 / fx)
 hold = set(a.hold.split(",")) if a.hold else set()
 for sp in ("train", "test"): os.makedirs(os.path.join(a.out, sp), exist_ok=True)
 frames = {"train": [], "test": []}
-def lookat_c2w(az, el):
+def lookat_c2w(az, el, tz=0.0, dist=D, sx=0.0, sy=0.0):
     az, el = math.radians(az), math.radians(el)
-    pos = D * np.array([math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el)])
-    fwd = -pos / np.linalg.norm(pos); right = np.cross(fwd, [0, 0, 1]); right /= np.linalg.norm(right); up = np.cross(right, fwd)
+    c = np.array([math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el)]); fwd = -c
+    right = np.cross(fwd, [0, 0, 1]); right /= np.linalg.norm(right); up = np.cross(right, fwd)
+    tgt = np.array([0, 0, tz]) + right * sx + up * sy; pos = tgt + dist * c
     c2w = np.eye(4); c2w[:3, 0] = right; c2w[:3, 1] = up; c2w[:3, 2] = -fwd; c2w[:3, 3] = pos
     return c2w
 for v in json.load(open(a.views)):
     im = Image.open(v["file"]).convert("RGBA"); al = np.asarray(im)[:, :, 3]
+    if "zoom" in v:                       # 顔アップ等: 正規化せず、キャンバスに合わせて拡縮するだけ。カメラ距離=D/zoom、注視点=(0,0,tz)+画面内ずれ(sx,sy)
+        out = im.resize((W, H), Image.LANCZOS)
+        name = v["name"]; sp = "test" if name in hold else "train"; out.save(os.path.join(a.out, sp, name + ".png"))
+        c = lookat_c2w(v["az"], v.get("el", 0), v.get("tz", 0.0), D / v["zoom"], v.get("sx", 0.0), v.get("sy", 0.0))
+        frames[sp].append({"file_path": f"{sp}/{name}", "transform_matrix": c.tolist(), "closeup": True}); continue
     ys = np.where((al > 127).any(axis=1))[0]; yt, yb = ys[0], ys[-1]
     hgt = yb - yt; s = fig_px / hgt
     rows = np.arange(int(yb - 0.22 * hgt), int(yb - 0.03 * hgt))
