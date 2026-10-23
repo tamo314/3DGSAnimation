@@ -5,11 +5,14 @@
 import argparse, json, math
 import numpy as np, cv2
 ap = argparse.ArgumentParser(); ap.add_argument("--crops", required=True); ap.add_argument("--faces", required=True); ap.add_argument("--out", required=True)
+ap.add_argument("--edges", action="store_true", help="輝度でなく勾配の大きさで合わせる(肌が滑らかな部位向け)")
 ap.add_argument("--smin", type=float, default=1.6); ap.add_argument("--smax", type=float, default=3.4); ap.add_argument("--blur", type=float, default=1.5); ap.add_argument("--W", type=int, default=1024); ap.add_argument("--H", type=int, default=1280); ap.add_argument("--fig", type=float, default=0.875)
 a = ap.parse_args()
 def gray(f, scale=0.5):
     im = cv2.imread(f, cv2.IMREAD_COLOR); im = cv2.resize(im, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-    g = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255; return cv2.GaussianBlur(g, (0, 0), a.blur)
+    g = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255; g = cv2.GaussianBlur(g, (0, 0), a.blur)
+    if a.edges: gx = cv2.Sobel(g, cv2.CV_32F, 1, 0); gy = cv2.Sobel(g, cv2.CV_32F, 0, 1); g = cv2.GaussianBlur(np.sqrt(gx ** 2 + gy ** 2), (0, 0), 2.0)
+    return g
 faces = {int(round(v["az"])): v for v in json.load(open(a.faces)) if v["name"].startswith("c10_az")}
 out = []
 for c in json.load(open(a.crops)):

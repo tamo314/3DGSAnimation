@@ -21,6 +21,10 @@ ap.add_argument("--lam_ssim", type=float, default=0.2); ap.add_argument("--lam_a
 ap.add_argument("--init_pts", type=int, default=60000); ap.add_argument("--hull_dilate", type=int, default=30)
 ap.add_argument("--warp", action="store_true", help="視点ごとの画像ずらし(低解像の変位場)を学習。生成画像どうしの細部のずれを吸収して、平均化によるぼけを減らす")
 ap.add_argument("--affine", default="", help="名前がこの接頭辞(カンマ区切り)で始まる視点について、画像の拡大率とずれ(2D)を視点ごとに学習する。弱透視の寄り画像の倍率・位置合わせ用")
+ap.add_argument("--resume", default="", help="学習済みのparams.ptから続ける(ビジュアルハルの初期化を行わない)。追加学習・局所の高精細化用")
+ap.add_argument("--sample_prefix", default="", help="指定すると、名前がこの接頭辞(カンマ区切り)で始まる視点だけを学習に使う")
+ap.add_argument("--reset_every", type=int, default=3000, help="不透明度のリセット間隔。続きの学習で、見えない部分(体など)の点を消さないために大きくする")
+ap.add_argument("--sh_start", type=int, default=0, help="SH次数を上げ始める反復数のずれ(続きの学習では大きくして最初から最大次数)")
 ap.add_argument("--warp_grid", type=int, default=16); ap.add_argument("--warp_px", type=float, default=12.0, help="変位の上限(px)"); ap.add_argument("--warp_lr", type=float, default=2e-3)
 ap.add_argument("--warp_reg", type=float, default=0.002, help="変位の大きさ・粗さへの罰則の重み"); ap.add_argument("--warp_start", type=int, default=1500)
 ap.add_argument("--grow_grad2d", type=float, default=0.0002); ap.add_argument("--seed", type=int, default=0); ap.add_argument("--eval_pose_iters", type=int, default=300)
@@ -95,12 +99,15 @@ def init_points():
     idx = torch.randperm(len(pts), device=dev)[:a.init_pts]
     print("hull points", int(sel.sum()), "→", len(idx))
     return pts[idx], col[idx].clamp(0.02, 0.98)
-means0, col0 = init_points()
-n0 = len(means0)
-from scipy.spatial import cKDTree
-d, _ = cKDTree(means0.cpu().numpy()).query(means0.cpu().numpy(), k=4); avg = torch.from_numpy(d[:, 1:].mean(1)).float().to(dev).clamp_min(1e-4)
+if a.resume:
+    _P = {k: v.to(dev) for k, v in torch.load(a.resume).items()}; means0 = _P["means"]; n0 = len(means0); col0 = None; avg = None
+else:
+    means0, col0 = init_points()
+    n0 = len(means0)
+    from scipy.spatial import cKDTree
+    d, _ = cKDTree(means0.cpu().numpy()).query(means0.cpu().numpy(), k=4); avg = torch.from_numpy(d[:, 1:].mean(1)).float().to(dev).clamp_min(1e-4)
 SH0 = 0.28209479177387814
-params = torch.nn.ParameterDict({
+params = torch.nn.ParameterDict({k: torch.nn.Parameter(v.clone()) for k, v in _P.items()}).to(dev) if a.resume else torch.nn.ParameterDict({
     "means": torch.nn.Parameter(means0), "scales": torch.nn.Parameter(torch.log(avg)[:, None].repeat(1, 3)),
     "quats": torch.nn.Parameter(F.normalize(torch.randn(n0, 4, device=dev), dim=-1)),
     "opacities": torch.nn.Parameter(torch.logit(torch.full((n0,), 0.3, device=dev))),
@@ -109,13 +116,16 @@ params = torch.nn.ParameterDict({
 scene_scale = 1.0
 lrs = {"means": 1.6e-4 * scene_scale, "scales": 5e-3, "quats": 1e-3, "opacities": 5e-2, "sh0": 2.5e-3, "shN": 2.5e-3 / 20}
 opts = {k: torch.optim.Adam([{"params": params[k], "lr": lrs[k]}], eps=1e-15) for k in params}
-strat = DefaultStrategy(verbose=False, refine_stop_iter=min(a.iters - 1000, 15000), reset_every=3000, grow_grad2d=a.grow_grad2d); state = strat.initialize_state(scene_scale=scene_scale)
+strat = DefaultStrategy(verbose=False, refine_stop_iter=min(a.iters - 1000, 15000), reset_every=a.reset_every, grow_grad2d=a.grow_grad2d); state = strat.initialize_state(scene_scale=scene_scale)
 pose_opt = torch.optim.Adam([pose], lr=a.pose_lr) if not a.no_pose else None
 gw_, gh_ = a.warp_grid, int(round(a.warp_grid * H / W))
 flow = torch.zeros(N, 2, gh_, gw_, device=dev, requires_grad=a.warp)                    # 視点ごとの変位場(tanhで±warp_pxに制限)
 aff = torch.zeros(N, 3, device=dev, requires_grad=bool(a.affine))                      # 視点ごと: log拡大率, 右ずれ, 下ずれ(正規化座標)
 aff_mask = torch.tensor([1.0 if (a.affine and any(n.startswith(q) for q in a.affine.split(","))) else 0.0 for n in tr_names], device=dev)
 _groups = ([{"params": [flow], "lr": a.warp_lr}] if a.warp else []) + ([{"params": [aff], "lr": a.warp_lr * 0.5}] if a.affine else [])
+if a.resume and os.path.exists(os.path.join(os.path.dirname(a.resume), "warp.pt")):
+    _W = torch.load(os.path.join(os.path.dirname(a.resume), "warp.pt"))
+    if _W["flow"].shape == flow.shape: flow.data.copy_(_W["flow"].to(dev)); aff.data.copy_(_W["aff"].to(dev))
 warp_opt = torch.optim.Adam(_groups) if _groups else None
 _base = F.affine_grid(torch.eye(2, 3, device=dev)[None], (1, 3, H, W), align_corners=False)
 def warp_img(x, i):                                                                      # x: (1,H,W,C)。描画を視点iの変位場でずらす
@@ -144,12 +154,12 @@ def ssim(x, y, ws=11):
 
 t0 = time.time(); order = []
 for it in range(1, a.iters + 1):
-    if not order: order = list(np.random.permutation(N))
+    if not order: order = [k for k in np.random.permutation(N) if (not a.sample_prefix) or any(tr_names[k].startswith(q) for q in a.sample_prefix.split(","))]
     i = order.pop()
     for g in opts["means"].param_groups: g["lr"] = lrs["means"] * sched_m(it)
     p = pose[i:i + 1] * pose_mask[i] if (pose_opt is not None and it > a.pose_start) else None
     vm = viewmat(c2w0[i:i + 1], p)
-    sh_deg = min(it // 1000, a.sh)
+    sh_deg = min((it + a.sh_start) // 1000, a.sh)
     img, al, info = render(vm, Kmat(zoom_tr[i:i + 1], p), W, H, sh_deg)
     strat.step_pre_backward(params, opts, state, it, info)
     use_w = warp_opt is not None and it > a.warp_start
@@ -179,6 +189,7 @@ def save_ply(path):
     PlyData([PlyElement.describe(el, "vertex")]).write(path)
 save_ply(os.path.join(a.out, "point_cloud.ply"))
 torch.save({k: v.detach().cpu() for k, v in params.items()}, os.path.join(a.out, "params.pt"))
+torch.save({"flow": flow.detach().cpu(), "aff": aff.detach().cpu()}, os.path.join(a.out, "warp.pt"))   # 視点ごとの変位場・アフィン(続きの学習 --resume 用)
 pose = pose * pose_mask[:, None]
 c2w_ref = viewmat(c2w0, pose.detach() if pose_opt is not None else None)
 poses = {tr_names[k]: {"d_az_deg": float(math.degrees(pose[k, 0].item())), "rot": pose[k, 1:4].tolist(), "trans": pose[k, 4:7].tolist(), "zoom_mult": float(math.exp(pose[k, 7].item())), "shift": pose[k, 8:10].tolist()} for k in range(N)}
