@@ -11,6 +11,7 @@ from PIL import Image
 ap = argparse.ArgumentParser(); ap.add_argument("views"); ap.add_argument("out")
 ap.add_argument("--hold", default=""); ap.add_argument("--W", type=int, default=1024); ap.add_argument("--H", type=int, default=1280)
 ap.add_argument("--fig", type=float, default=0.875, help="キャラ高さが画像高さに占める割合")
+ap.add_argument("--tele", action="store_true", help="顔アップをカメラ距離ではなく焦点距離の倍率で表す(弱透視。frame に focal_mult を入れる)")
 a = ap.parse_args()
 W, H = a.W, a.H; D = 8.0
 fig_px = H * a.fig; fx = fig_px * D / 2.0
@@ -30,8 +31,10 @@ for v in json.load(open(a.views)):
     if "zoom" in v:                       # 顔アップ等: 正規化せず、キャンバスに合わせて拡縮するだけ。カメラ距離=D/zoom、注視点=(0,0,tz)+画面内ずれ(sx,sy)
         out = im.resize((W, H), Image.LANCZOS)
         name = v["name"]; sp = "test" if name in hold else "train"; out.save(os.path.join(a.out, sp, name + ".png"))
-        c = lookat_c2w(v["az"], v.get("el", 0), v.get("tz", 0.0), D / v["zoom"], v.get("sx", 0.0), v.get("sy", 0.0))
-        frames[sp].append({"file_path": f"{sp}/{name}", "transform_matrix": c.tolist(), "closeup": True}); continue
+        c = lookat_c2w(v["az"], v.get("el", 0), v.get("tz", 0.0), D if a.tele else D / v["zoom"], v.get("sx", 0.0), v.get("sy", 0.0))
+        fr = {"file_path": f"{sp}/{name}", "transform_matrix": c.tolist(), "closeup": True}
+        if a.tele: fr["focal_mult"] = v["zoom"]
+        frames[sp].append(fr); continue
     ys = np.where((al > 127).any(axis=1))[0]; yt, yb = ys[0], ys[-1]
     hgt = yb - yt; s = fig_px / hgt
     rows = np.arange(int(yb - 0.22 * hgt), int(yb - 0.03 * hgt))

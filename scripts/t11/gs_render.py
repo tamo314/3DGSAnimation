@@ -9,10 +9,12 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--params", required=True); ap.add_argument("--out", required=True); ap.add_argument("--views", required=True)
 ap.add_argument("--zoom", type=float, default=1.0); ap.add_argument("--target", default="0,0,0")
 ap.add_argument("--W", type=int, default=1024); ap.add_argument("--H", type=int, default=1280); ap.add_argument("--fig", type=float, default=0.875)
+ap.add_argument("--tele", action="store_true", help="倍率をカメラ距離でなく焦点距離で表す(build_dataset.py --tele のデータ用)")
 ap.add_argument("--sh", type=int, default=3); ap.add_argument("--ss", type=int, default=1, help="超サンプリング倍率(縮小して出力)")
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); dev = "cuda"
 P = {k: v.to(dev) for k, v in torch.load(a.params).items()}
-D = 8.0; Wr, Hr = a.W * a.ss, a.H * a.ss; fx = a.H * a.fig * D / 2.0 * a.ss; Dist = D / a.zoom   # 倍率はカメラ距離で表す(gs_train.pyの顔アップと同じ)
+D = 8.0; Wr, Hr = a.W * a.ss, a.H * a.ss; fx = a.H * a.fig * D / 2.0 * a.ss; Dist = D if a.tele else D / a.zoom
+if a.tele: fx = fx * a.zoom
 K = torch.tensor([[fx, 0, Wr / 2], [0, fx, Hr / 2], [0, 0, 1]], dtype=torch.float32, device=dev)
 tgt = np.array([float(x) for x in a.target.split(",")])
 CV = np.diag([1., -1., -1., 1.])

@@ -15,9 +15,14 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--data", required=True); ap.add_argument("--out", required=True)
 ap.add_argument("--iters", type=int, default=15000); ap.add_argument("--sh", type=int, default=3)
 ap.add_argument("--pose_lr", type=float, default=1e-3); ap.add_argument("--no_pose", action="store_true")
+ap.add_argument("--pose_prefix", default="", help="指定すると、名前がこの接頭辞で始まる視点だけ姿勢(方位・平行移動=倍率とずれ)を学習する(例 z_=部位アップ)")
 ap.add_argument("--pose_start", type=int, default=500)
 ap.add_argument("--lam_ssim", type=float, default=0.2); ap.add_argument("--lam_alpha", type=float, default=0.1)
 ap.add_argument("--init_pts", type=int, default=60000); ap.add_argument("--hull_dilate", type=int, default=30)
+ap.add_argument("--warp", action="store_true", help="視点ごとの画像ずらし(低解像の変位場)を学習。生成画像どうしの細部のずれを吸収して、平均化によるぼけを減らす")
+ap.add_argument("--affine", default="", help="名前がこの接頭辞(カンマ区切り)で始まる視点について、画像の拡大率とずれ(2D)を視点ごとに学習する。弱透視の寄り画像の倍率・位置合わせ用")
+ap.add_argument("--warp_grid", type=int, default=16); ap.add_argument("--warp_px", type=float, default=12.0, help="変位の上限(px)"); ap.add_argument("--warp_lr", type=float, default=2e-3)
+ap.add_argument("--warp_reg", type=float, default=0.002, help="変位の大きさ・粗さへの罰則の重み"); ap.add_argument("--warp_start", type=int, default=1500)
 ap.add_argument("--grow_grad2d", type=float, default=0.0002); ap.add_argument("--seed", type=int, default=0); ap.add_argument("--eval_pose_iters", type=int, default=300)
 a = ap.parse_args()
 os.makedirs(a.out, exist_ok=True); dev = "cuda"; torch.manual_seed(a.seed); np.random.seed(a.seed)
@@ -25,16 +30,16 @@ D = 8.0
 
 def load_split(sp):
     p = os.path.join(a.data, f"transforms_{sp}.json"); j = json.load(open(p)); fr = j["frames"]
-    imgs, c2w, names, zooms = [], [], [], []
+    imgs, c2w, names, zooms, fms = [], [], [], [], []
     for f in fr:
         im = np.asarray(Image.open(os.path.join(a.data, f["file_path"] + ".png")).convert("RGBA")).astype(np.float32) / 255
-        imgs.append(im); c2w.append(np.array(f["transform_matrix"], np.float32)); names.append(os.path.basename(f["file_path"])); zooms.append(0.0 if f.get("closeup") else 1.0)
-    return j["camera_angle_x"], imgs, c2w, names, zooms
-fovx, tr_img, tr_c2w, tr_names, tr_zoom = load_split("train"); _, te_img, te_c2w, te_names, te_zoom = load_split("test")
+        imgs.append(im); c2w.append(np.array(f["transform_matrix"], np.float32)); names.append(os.path.basename(f["file_path"])); fms.append(f.get("focal_mult", 1.0)); zooms.append(0.0 if f.get("closeup") else 1.0)
+    return j["camera_angle_x"], imgs, c2w, names, zooms, fms
+fovx, tr_img, tr_c2w, tr_names, tr_zoom, tr_fm = load_split("train"); _, te_img, te_c2w, te_names, te_zoom, te_fm = load_split("test")
 H, W = tr_img[0].shape[:2]; fx = W / 2 / math.tan(fovx / 2)
 def Kmat(zoom, p=None):
     """視点ごとの内部パラメータ。zoom: (n,)名目倍率。p: 補正(n,10)の 7=log倍率, 8,9=画像中心のずれ(幅/高さ比)。"""
-    n = len(zoom); f = fx * torch.ones(n, device=dev);   # 倍率はカメラ距離で表すので焦点距離は常にfx
+    n = len(zoom); f = fx * torch.as_tensor(zoom, device=dev, dtype=torch.float32).reshape(n);   # zoom=焦点距離の倍率(frame の focal_mult。--tele で作ったデータ以外は1)。倍率の学習はKに勾配が来ないので使わない
     cx = torch.full((n,), W / 2, device=dev); cy = torch.full((n,), H / 2, device=dev)
     if p is not None: f = f * torch.exp(p[:, 7]); cx = cx + p[:, 8] * W; cy = cy + p[:, 9] * H
     Km = torch.zeros(n, 3, 3, device=dev); Km[:, 0, 0] = f; Km[:, 1, 1] = f; Km[:, 0, 2] = cx; Km[:, 1, 2] = cy; Km[:, 2, 2] = 1
@@ -68,7 +73,7 @@ def viewmat(c2w_gl, p=None):
     return torch.linalg.inv(c2w @ CV)
 c2w0 = torch.from_numpy(np.stack(tr_c2w)).to(dev)
 pose = torch.zeros(N, 10, device=dev, requires_grad=not a.no_pose)
-zoom_tr = torch.tensor(tr_zoom, device=dev)
+zoom_tr = torch.tensor(tr_fm, device=dev)
 full_idx = [i for i in range(N) if tr_zoom[i] == 1.0]   # tr_zoom: 1=全身, 0=顔アップ(ハルの初期化に使わない)
 
 # --- ビジュアルハルで初期点 ---
@@ -106,6 +111,21 @@ lrs = {"means": 1.6e-4 * scene_scale, "scales": 5e-3, "quats": 1e-3, "opacities"
 opts = {k: torch.optim.Adam([{"params": params[k], "lr": lrs[k]}], eps=1e-15) for k in params}
 strat = DefaultStrategy(verbose=False, refine_stop_iter=min(a.iters - 1000, 15000), reset_every=3000, grow_grad2d=a.grow_grad2d); state = strat.initialize_state(scene_scale=scene_scale)
 pose_opt = torch.optim.Adam([pose], lr=a.pose_lr) if not a.no_pose else None
+gw_, gh_ = a.warp_grid, int(round(a.warp_grid * H / W))
+flow = torch.zeros(N, 2, gh_, gw_, device=dev, requires_grad=a.warp)                    # 視点ごとの変位場(tanhで±warp_pxに制限)
+aff = torch.zeros(N, 3, device=dev, requires_grad=bool(a.affine))                      # 視点ごと: log拡大率, 右ずれ, 下ずれ(正規化座標)
+aff_mask = torch.tensor([1.0 if (a.affine and any(n.startswith(q) for q in a.affine.split(","))) else 0.0 for n in tr_names], device=dev)
+_groups = ([{"params": [flow], "lr": a.warp_lr}] if a.warp else []) + ([{"params": [aff], "lr": a.warp_lr * 0.5}] if a.affine else [])
+warp_opt = torch.optim.Adam(_groups) if _groups else None
+_base = F.affine_grid(torch.eye(2, 3, device=dev)[None], (1, 3, H, W), align_corners=False)
+def warp_img(x, i):                                                                      # x: (1,H,W,C)。描画を視点iの変位場でずらす
+    d = torch.tanh(flow[i:i + 1]) * a.warp_px; d = F.interpolate(d, size=(H, W), mode="bicubic", align_corners=False).permute(0, 2, 3, 1)
+    q = aff[i] * aff_mask[i]; g = _base * torch.exp(q[0]) + q[1:3] + d * torch.tensor([2 / W, 2 / H], device=dev)
+    return F.grid_sample(x.permute(0, 3, 1, 2), g, mode="bilinear", padding_mode="border", align_corners=False).permute(0, 2, 3, 1)
+def flow_reg(i):
+    f = torch.tanh(flow[i:i + 1]) * a.warp_px
+    return f.abs().mean() + 4 * ((f[..., 1:, :] - f[..., :-1, :]).abs().mean() + (f[..., 1:] - f[..., :-1]).abs().mean())
+pose_mask = torch.tensor([1.0 if n.startswith(a.pose_prefix) else 0.0 for n in tr_names], device=dev)   # 姿勢を学習する視点(接頭辞なしなら全部)
 plr_mult = torch.tensor([1, 1, 1, 1, 3, 3, 3, 0, 0, 0], device=dev)   # gsplatはKへの勾配を返さないので倍率・中心ずれは使わず、カメラ平行移動で表す
 sched_m = lambda it: 0.01 ** min(it / a.iters, 1.0)
 
@@ -127,14 +147,18 @@ for it in range(1, a.iters + 1):
     if not order: order = list(np.random.permutation(N))
     i = order.pop()
     for g in opts["means"].param_groups: g["lr"] = lrs["means"] * sched_m(it)
-    p = pose[i:i + 1] if (pose_opt is not None and it > a.pose_start) else None
+    p = pose[i:i + 1] * pose_mask[i] if (pose_opt is not None and it > a.pose_start) else None
     vm = viewmat(c2w0[i:i + 1], p)
     sh_deg = min(it // 1000, a.sh)
     img, al, info = render(vm, Kmat(zoom_tr[i:i + 1], p), W, H, sh_deg)
     strat.step_pre_backward(params, opts, state, it, info)
-    l1 = (img - tr_rgb[i:i + 1]).abs().mean()
-    loss = (1 - a.lam_ssim) * l1 + a.lam_ssim * (1 - ssim(img, tr_rgb[i:i + 1])) + a.lam_alpha * (al - tr_al[i:i + 1]).abs().mean()
+    use_w = warp_opt is not None and it > a.warp_start
+    img_l = warp_img(img, i) if use_w else img                                          # 損失用(勾配のための densification 統計は未ワープのinfoから)
+    l1 = (img_l - tr_rgb[i:i + 1]).abs().mean()
+    loss = (1 - a.lam_ssim) * l1 + a.lam_ssim * (1 - ssim(img_l, tr_rgb[i:i + 1])) + a.lam_alpha * (al - tr_al[i:i + 1]).abs().mean()
+    if use_w and a.warp: loss = loss + a.warp_reg * flow_reg(i)
     loss.backward()
+    if use_w: warp_opt.step(); warp_opt.zero_grad(set_to_none=True)
     strat.step_post_backward(params, opts, state, it, info, packed=False)
     for o in opts.values(): o.step(); o.zero_grad(set_to_none=True)
     if pose_opt is not None and it > a.pose_start:
@@ -155,9 +179,11 @@ def save_ply(path):
     PlyData([PlyElement.describe(el, "vertex")]).write(path)
 save_ply(os.path.join(a.out, "point_cloud.ply"))
 torch.save({k: v.detach().cpu() for k, v in params.items()}, os.path.join(a.out, "params.pt"))
+pose = pose * pose_mask[:, None]
 c2w_ref = viewmat(c2w0, pose.detach() if pose_opt is not None else None)
 poses = {tr_names[k]: {"d_az_deg": float(math.degrees(pose[k, 0].item())), "rot": pose[k, 1:4].tolist(), "trans": pose[k, 4:7].tolist(), "zoom_mult": float(math.exp(pose[k, 7].item())), "shift": pose[k, 8:10].tolist()} for k in range(N)}
-json.dump({"train": poses}, open(os.path.join(a.out, "poses.json"), "w"), indent=1)
+affs = {tr_names[k]: {"scale": float(math.exp(aff[k, 0].item() * aff_mask[k].item())), "shift": [aff[k, 1].item() * aff_mask[k].item(), aff[k, 2].item() * aff_mask[k].item()]} for k in range(N) if aff_mask[k] > 0}
+json.dump({"train": poses, "affine": affs}, open(os.path.join(a.out, "poses.json"), "w"), indent=1)
 
 @torch.no_grad()
 def psnr(x, y): return float(-10 * torch.log10(((x - y) ** 2).mean()))
@@ -171,7 +197,7 @@ with torch.no_grad():
     metrics["train_psnr"] = float(np.mean(tp))
 # 保留視点: 姿勢だけを最適化してから評価
 if te_rgb is not None:
-    c2wt = torch.from_numpy(np.stack(te_c2w)).to(dev); ptest = torch.zeros(len(te_img), 10, device=dev, requires_grad=True); zoom_te = torch.tensor(te_zoom, device=dev)
+    c2wt = torch.from_numpy(np.stack(te_c2w)).to(dev); ptest = torch.zeros(len(te_img), 10, device=dev, requires_grad=True); zoom_te = torch.tensor(te_fm, device=dev)
     po = torch.optim.Adam([ptest], lr=3e-3)
     for _ in range(a.eval_pose_iters):
         loss = sum((render(viewmat(c2wt[k:k + 1], ptest[k:k + 1]), Kmat(zoom_te[k:k + 1], ptest[k:k + 1]), W, H, a.sh)[0] - te_rgb[k:k + 1]).abs().mean() for k in range(len(te_img)))

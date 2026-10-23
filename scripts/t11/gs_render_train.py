@@ -25,9 +25,9 @@ for f in j["frames"]:
     if p:
         Rz = torch.eye(4, device=dev); Rz[:3, :3] = rotz(math.radians(p["d_az_deg"])); dl = torch.eye(4, device=dev); dl[:3, :3] = rotvec(p["rot"]); dl[:3, 3] = torch.tensor(p["trans"], device=dev)
         c2w = Rz @ c2w @ dl
-    vm = torch.linalg.inv(c2w @ CV)[None]
+    vm = torch.linalg.inv(c2w @ CV)[None]; Kf = K.clone(); Kf[:, 0, 0] *= f.get("focal_mult", 1.0); Kf[:, 1, 1] *= f.get("focal_mult", 1.0)
     with torch.no_grad():
-        img, _, _ = rasterization(P["means"], F.normalize(P["quats"], dim=-1), torch.exp(P["scales"]), torch.sigmoid(P["opacities"]), torch.cat([P["sh0"], P["shN"]], 1), vm, K, W * a.ss, H * a.ss, sh_degree=a.sh, backgrounds=torch.ones(1, 3, device=dev), packed=False)
+        img, _, _ = rasterization(P["means"], F.normalize(P["quats"], dim=-1), torch.exp(P["scales"]), torch.sigmoid(P["opacities"]), torch.cat([P["sh0"], P["shN"]], 1), vm, Kf, W * a.ss, H * a.ss, sh_degree=a.sh, backgrounds=torch.ones(1, 3, device=dev), packed=False)
     im = img[0].clamp(0, 1).permute(2, 0, 1)[None]
     if a.ss > 1: im = F.interpolate(im, size=(H, W), mode="area")
     Image.fromarray((im[0].permute(1, 2, 0).cpu().numpy() * 255 + .5).astype(np.uint8)).save(os.path.join(a.out, name + ".png"))
